@@ -1,5 +1,9 @@
 # i-hate-spaghetti
 
+<p align="center">
+  <img src="assets/banner.svg" alt="i-hate-spaghetti — your agent writes code that works; this makes it write code the next person can read" width="900">
+</p>
+
 **An agent skill that makes coding agents write code the next person can read — instead of code that merely runs.**
 
 Works with Claude Code, Codex CLI, OpenCode, Pi, omp, and any agent that implements the [Agent Skills](https://agentskills.io) format.
@@ -145,3 +149,5 @@ Issues and PRs welcome. Rules for changes to the skill itself:
 ## License
 
 MIT.
+
+Artwork (`assets/banner.svg`, `assets/logo.svg`, and the rendered PNGs) is yours to use with the project — the banner is 1280×640, so it doubles as the repo's social preview: **Settings → Social preview → Upload** `assets/social-preview.png`.
