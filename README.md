@@ -48,7 +48,15 @@ When the codebase's own pattern is the real problem (a 900-line module, swallowe
 
 ## Install
 
-### One command, all agents
+### Fastest — the skills CLI
+
+```bash
+npx skills add Chathula/i-hate-spaghetti     # pick your agents when prompted, or -g for global
+```
+
+That is the [skills.sh](https://skills.sh) path: no registry submission, the CLI reads `SKILL.md` straight from this repo and installs it wherever your agents look.
+
+### One command, all agents (from a clone)
 
 ```bash
 git clone https://github.com/Chathula/i-hate-spaghetti.git
