@@ -12,34 +12,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python: ["3.8", "3.11", "3.12"]
+        python: ["3.10", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
+      - name: skill frontmatter and file references
+        run: python .github/validate_skill.py skills/i-hate-spaghetti
       - name: unit tests
-        run: python -m unittest discover -s tests -v
-      - name: skill frontmatter is valid
-        run: |
-          python - <<'PY'
-          import re, pathlib, sys
-          text = pathlib.Path("SKILL.md").read_text(encoding="utf-8")
-          assert text.startswith("---"), "SKILL.md must start with frontmatter at byte 0"
-          m = re.search(r"\n---\s*\n", text[3:])
-          assert m, "unterminated frontmatter"
-          fm = text[3:m.start() + 3]
-          name = re.search(r"^name:\s*(\S+)", fm, re.M).group(1)
-          desc = re.search(r"^description:\s*(.+)$", fm, re.M).group(1).strip()
-          assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name), f"bad name: {name}"
-          assert len(name) <= 64, "name > 64 chars"
-          # Codex CLI rejects descriptions over 500 chars; the Agent Skills spec allows 1024.
-          assert len(desc) <= 500, f"description is {len(desc)} chars (limit 500)"
-          assert len(text.splitlines()) <= 500, "SKILL.md > 500 lines"
-          assert text.count("\n---\n") >= 1
-          print(f"ok: {name}, description {len(desc)} chars, {len(text.splitlines())} lines")
-          PY
+        run: python -m unittest discover -s skills/i-hate-spaghetti/tests -v
       - name: self-scan
-        run: python scripts/spaghetti.py sniff .
+        run: python skills/i-hate-spaghetti/scripts/spaghetti.py sniff skills
       - name: score our own scripts
-        run: python scripts/spaghetti.py score scripts tests --max-func 60 || true
+        run: python skills/i-hate-spaghetti/scripts/spaghetti.py score skills --max-func 60 || true

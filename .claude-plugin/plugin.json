@@ -1,0 +1,11 @@
+{
+  "name": "i-hate-spaghetti",
+  "version": "1.0.0",
+  "description": "Keeps agent-written code structured, quiet and consistent with the codebase it lands in.",
+  "author": {
+    "name": "Chathula Sampath",
+    "url": "https://github.com/Chathula"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Chathula/i-hate-spaghetti"
+}

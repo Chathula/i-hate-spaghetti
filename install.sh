@@ -10,7 +10,8 @@
 set -eu
 
 SKILL=i-hate-spaghetti
-SRC=$(cd "$(dirname "$0")" && pwd)
+REPO=$(cd "$(dirname "$0")" && pwd)
+SRC="$REPO/skills/$SKILL"
 MODE=copy
 ALL=0
 PROJECT=

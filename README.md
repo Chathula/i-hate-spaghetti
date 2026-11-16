@@ -67,6 +67,26 @@ cd i-hate-spaghetti
 ./install.sh --project ~/code/my-app   # install into that project only
 ```
 
+### As a plugin (Claude Code, omp, anything with a plugin loader)
+
+Claude Code, straight from the shell:
+
+```bash
+claude plugin marketplace add Chathula/i-hate-spaghetti
+claude plugin install i-hate-spaghetti@i-hate-spaghetti
+```
+
+Or inside a session: `/plugin marketplace add Chathula/i-hate-spaghetti`, then `/plugin install i-hate-spaghetti`. It shows up as `/i-hate-spaghetti:i-hate-spaghetti`.
+
+The repo is a plugin root — `.claude-plugin/plugin.json` plus `skills/i-hate-spaghetti/` — so the same tree also works with loaders that read a standard root `plugin.json` (omp's agent-plugins provider, and anything else following that convention):
+
+```bash
+omp --extension ~/code/i-hate-spaghetti        # or install the dir through your agent's plugin path
+claude --plugin-dir ~/code/i-hate-spaghetti    # load without registering a marketplace
+```
+
+A plugin install is just the skill install with a management layer on top: same `SKILL.md`, same scripts, updated with one command.
+
 ### Where it lands
 
 | Agent | User | Project |
@@ -103,20 +123,21 @@ Turn it off with **"stop spaghetti"** or **"normal mode"** in a message.
 They are useful without any agent:
 
 ```bash
-python3 scripts/spaghetti.py sniff .                    # project contract
-python3 scripts/spaghetti.py score --diff               # only what you changed
-python3 scripts/spaghetti.py score --max-lines 300 src  # stricter thresholds
+S=skills/i-hate-spaghetti/scripts/spaghetti.py
+python3 $S sniff .                    # project contract
+python3 $S score --diff               # only what you changed
+python3 $S score --max-lines 300 src  # stricter thresholds
 ```
 
 Exit codes: `0` clean, `1` findings, `2` usage error — drop it in CI:
 
 ```yaml
-- run: python3 scripts/spaghetti.py score --max-func 50
+- run: python3 skills/i-hate-spaghetti/scripts/spaghetti.py score --max-func 50
 ```
 
-Python 3.8+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it.
+Python 3.10+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it.
 
-`scripts/analysis.py` is the library half (walking, measuring); `scripts/spaghetti.py` is the CLI. Import the former if you want the checks inside your own tooling.
+`skills/i-hate-spaghetti/scripts/analysis.py` is the library half (walking, measuring); `spaghetti.py` is the CLI. Import the former if you want the checks inside your own tooling.
 
 Known false positives, by design and by name:
 

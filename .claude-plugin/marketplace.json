@@ -1,0 +1,14 @@
+{
+  "name": "i-hate-spaghetti",
+  "description": "Code-quality skills for coding agents",
+  "owner": {
+    "name": "Chathula Sampath"
+  },
+  "plugins": [
+    {
+      "name": "i-hate-spaghetti",
+      "source": "./",
+      "description": "Keeps agent-written code structured, quiet and consistent with the codebase it lands in."
+    }
+  ]
+}

@@ -3,12 +3,13 @@
 Every function here is a heuristic over text. Nothing imports the CLI, so the
 module is usable from a script, a test, or an editor plugin.
 """
-import hashlib
 import json
 import os
 import re
 import subprocess
+import zlib
 from collections import Counter, defaultdict
+from functools import lru_cache
 from pathlib import Path
 
 SKIP_DIRS = {
@@ -59,14 +60,16 @@ def walk(root: Path):
                 yield p
 
 
+@lru_cache(maxsize=8192)
 def read_lines(path: Path):
+    """Cached: one read per file per run, sniff and score both ask for it."""
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return []
+        return ()
     if "\x00" in text[:1024]:
-        return []
-    return text.splitlines()
+        return ()
+    return tuple(text.splitlines())
 
 
 def rel(path: Path, root: Path) -> str:
@@ -231,7 +234,7 @@ def dup_windows(path: Path, lines, skip=()):
         norm.append((i, re.sub(r"\s+", " ", s)))
     for i in range(len(norm) - DUP_WINDOW + 1):
         body = "\n".join(x[1] for x in norm[i:i + DUP_WINDOW])
-        yield hashlib.sha1(body.encode()).hexdigest(), norm[i][0]
+        yield zlib.crc32(body.encode()), norm[i][0]
 
 
 def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
