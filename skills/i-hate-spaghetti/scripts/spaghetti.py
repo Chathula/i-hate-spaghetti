@@ -5,10 +5,12 @@
     score [files...]  per-file findings: long files/functions, deep nesting,
                       duplicated blocks, commented-out code, TODOs, comment noise
 
-Exit codes for score: 0 clean, 1 findings, 2 usage error. Findings are
-heuristics that point at code worth a second look; they are not verdicts.
+Output is plain when piped; --color auto|always|never overrides (NO_COLOR disables
+the default). Exit codes for score: 0 clean, 1 findings, 2 usage error. Findings
+are heuristics that point at code worth a second look; they are not verdicts.
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -18,8 +20,50 @@ from analysis import (
     test_locations, LANGS, SKIP_DIRS, rel,
 )
 
+CODES = {
+    "bold": "1", "dim": "2", "red": "31", "green": "32",
+    "yellow": "33", "cyan": "36",
+}
+NOISE_CHECKS = {"commented-code", "todos", "long-lines", "noise-ratio"}
 
-def cmd_sniff(root: Path) -> int:
+
+class Theme:
+    """ANSI painter. Padding is applied before painting, so widths never count escapes."""
+
+    def __init__(self, enabled: bool):
+        self.enabled = enabled
+
+    def __call__(self, text, *names):
+        if not self.enabled or not names:
+            return text
+        return "".join(f"\033[{CODES[n]}m" for n in names) + text + "\033[0m"
+
+
+def want_color(mode: str) -> bool:
+    if mode == "always":
+        return True
+    if mode == "never" or "NO_COLOR" in os.environ or os.environ.get("TERM") == "dumb":
+        return False
+    return sys.stdout.isatty()
+
+
+def print_kv(rows, style: Theme) -> None:
+    """Aligned `key: value` block — the sniff contract."""
+    width = max(len(label) for label, _ in rows) + 1
+    for label, value in rows:
+        print(style(f"{label}:".ljust(width), "dim") + " " + value)
+
+
+def print_biggest(sizes, root: Path, style: Theme) -> None:
+    top = sorted(sizes, reverse=True)[:5]
+    width = max([len("lines")] + [len(str(count)) for count, _ in top])
+    print(style("biggest:", "dim"))
+    print(style(f"  {'lines'.rjust(width)}  file", "dim"))
+    for count, path in top:
+        print(f"  {style(str(count).rjust(width), 'yellow')}  {rel(path, root)}")
+
+
+def cmd_sniff(root: Path, style: Theme) -> int:
     files = list(walk(root))
     if not files:
         print("no source files found")
@@ -38,37 +82,42 @@ def cmd_sniff(root: Path) -> int:
         sizes.append((count, path))
     depth = max((len(Path(rel(p, root)).parts) - 1 for p in files), default=0)
 
-    print("stack:  " + " ".join(f"{k}({v})" for k, v in ranked))
-    print(f"size:   {len(files)} source files, {total_lines:,} lines, max depth {min(depth, 10)}")
-
+    rows = [
+        ("stack", " ".join(f"{k}({v})" for k, v in ranked)),
+        ("size", f"{len(files)} source files, {total_lines:,} lines, max depth {min(depth, 10)}"),
+    ]
     managers = detect_package_managers(root)
     if managers:
-        print("build:  " + " ".join(managers))
+        rows.append(("build", " ".join(managers)))
     scripts = package_scripts(root)
     if scripts:
-        print("scripts: " + " ".join(scripts))
+        rows.append(("scripts", " ".join(scripts)))
     lints = lint_configs(root)
     if lints:
-        print("lint:   " + " ".join(lints))
+        rows.append(("lint", " ".join(lints)))
     tests = test_locations(root)
     if tests:
-        print("tests:  " + ", ".join(tests))
+        rows.append(("tests", ", ".join(tests)))
 
     top_dirs = sorted(
         d.name for d in root.iterdir()
         if d.is_dir() and not d.name.startswith(".") and d.name not in SKIP_DIRS
     )[:12]
     if top_dirs:
-        print("layout: " + " ".join(top_dirs))
+        rows.append(("layout", " ".join(top_dirs)))
 
-    print("biggest:")
-    for count, path in sorted(sizes, reverse=True)[:5]:
-        print(f"        {rel(path, root)} ({count} lines)")
-    print(f"naming: {naming_style([p.name for _, p in sorted(sizes, reverse=True)[:40]])} (dominant)")
+    print(style("i-hate-spaghetti", "bold") + style(" · project contract", "dim"))
+    print_kv(rows, style)
+    print_biggest(sizes, root, style)
+
+    print_kv([(
+        "naming",
+        naming_style([p.name for _, p in sorted(sizes, reverse=True)[:40]]) + " (dominant)",
+    )], style)
 
     log = git(["log", "-3", "--format=%s"], root)
     if log:
-        print("commits: " + " | ".join(s[:60] for s in log.splitlines()))
+        print_kv([("commits", " | ".join(s[:60] for s in log.splitlines()))], style)
     return 0
 
 
@@ -90,7 +139,7 @@ def pick_targets(args, root: Path):
     return [p for p in targets or list(walk(root)) if is_source(p)]
 
 
-def cmd_score(args) -> int:
+def cmd_score(args, style: Theme) -> int:
     root = Path(".")
     targets = pick_targets(args, root)
     if not targets:
@@ -101,24 +150,30 @@ def cmd_score(args) -> int:
     for path, line, check, detail in duplicate_findings(targets, root):
         per_file.setdefault(path, []).append((line, check, detail))
 
-    lines, flagged, total = [], 0, 0
-    for path in sorted(per_file):
-        found = per_file[path]
-        if not found:
-            continue
-        flagged += 1
-        total += len(found)
-        lines.extend(f"{rel(path, root)}:{line}  {check}  {detail}" for line, check, detail in sorted(found))
-
+    groups = {path: found for path, found in per_file.items() if found}
+    total = sum(len(found) for found in groups.values())
     if not args.quiet:
-        print("\n".join(lines))
-    pct = 100 * flagged / len(targets)
-    print(f"score: {total} flags in {flagged} of {len(targets)} files ({pct:.1f}%)")
+        for path in sorted(groups):
+            print(style(rel(path, root), "bold", "cyan"))
+            for line, check, detail in sorted(groups[path]):
+                tone = "yellow" if check in NOISE_CHECKS else "red"
+                number = style(str(line).rjust(5), "dim")
+                print(f"  {number}  {style(check.ljust(14), tone)}  {detail}")
+
+    pct = 100 * len(groups) / len(targets)
+    tone = "green" if not total else "yellow"
+    summary = (f"score: {style(str(total), tone)} flags in "
+               f"{len(groups)} of {len(targets)} files ({pct:.1f}%)")
+    print(summary)
     return 1 if total else 0
 
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="spaghetti", description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--color", choices=("auto", "always", "never"), default="auto",
+        help="auto (TTY only) | always | never",
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sniff = sub.add_parser("sniff", help="print the project contract")
@@ -136,8 +191,9 @@ def build_parser():
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
+    style = Theme(want_color(args.color))
     try:
-        return cmd_sniff(Path(args.path)) if args.cmd == "sniff" else cmd_score(args)
+        return cmd_sniff(Path(args.path), style) if args.cmd == "sniff" else cmd_score(args, style)
     except KeyboardInterrupt:
         return 2
 

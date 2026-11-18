@@ -55,6 +55,13 @@ class SniffTest(unittest.TestCase):
             self.assertIn("scripts: build", out.stdout)
             self.assertNotIn("commits:", out.stdout)
 
+    def test_colors_only_when_asked(self):
+        with Workspace() as root:
+            write(root, "a.ts", "export const a = 1;\n")
+            self.assertNotIn("\x1b[", run("sniff", ".", cwd=root).stdout)
+            self.assertIn("\x1b[", run("--color", "always", "sniff", ".", cwd=root).stdout)
+            self.assertNotIn("\x1b[", run("--color", "never", "sniff", ".", cwd=root).stdout)
+
 
 class ScoreTest(unittest.TestCase):
     def test_long_file_flagged_and_exits_1(self):

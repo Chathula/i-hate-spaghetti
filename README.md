@@ -10,16 +10,19 @@ Works with Claude Code, Codex CLI, OpenCode, Pi, omp, and any agent that impleme
 
 ```text
 $ spaghetti.py sniff .
-stack:  ts(412) css(31) py(12)
-size:   455 source files, 61,204 lines, max depth 4
+i-hate-spaghetti · project contract
+stack:   ts(412) css(31) py(12)
+size:    455 source files, 61,204 lines, max depth 4
 build:   bun
 scripts: dev build test lint typecheck
 lint:    eslint.config.js .prettierrc tsconfig.json
 tests:   tests/ (dir, 88 files)
 layout:  app components lib server scripts tests types
-biggest: server/routes/reports.ts (912 lines)
-         lib/api/client.ts (604 lines)
-naming:  kebab-case (dominant); 5 samples
+biggest:
+  lines  file
+    912  server/routes/reports.ts
+    604  lib/api/client.ts
+naming:  kebab-case (dominant)
 commits: feat(billing): add retry on capture | fix: quote order id | chore: bump deps
 ```
 
@@ -107,7 +110,7 @@ Claude Code, Codex and OpenCode all read `.agents/skills` too, so a single copy 
 
 ## Usage
 
-The skill is model-invoked: write code as usual and it loads when the task touches code. To force it:
+The skill is model-invoked and **on by default for code**: write code as usual and it loads whenever the task touches code. To force it on a task it skipped:
 
 ```text
 Claude Code    /i-hate-spaghetti
@@ -135,6 +138,8 @@ Exit codes: `0` clean, `1` findings, `2` usage error — drop it in CI:
 - run: python3 skills/i-hate-spaghetti/scripts/spaghetti.py score --max-func 50
 ```
 
+`sniff` prints an aligned contract; `score` groups findings by file. Colors turn on for a terminal and stay off in pipes, CI and where `NO_COLOR` is set; `--color always|never` overrides.
+
 Python 3.10+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it.
 
 `skills/i-hate-spaghetti/scripts/analysis.py` is the library half (walking, measuring); `spaghetti.py` is the CLI. Import the former if you want the checks inside your own tooling.
@@ -150,7 +155,7 @@ Known false positives, by design and by name:
 | Loaded | When | Size |
 |---|---|---|
 | Description only | every turn, in the skill index | ~80 tokens |
-| `SKILL.md` | when a coding task starts | ~1.65k tokens (106 lines) |
+| `SKILL.md` | when a coding task starts | ~1.7k tokens (110 lines) |
 | `references/*.md` | only when the skill points at one | ~0.65–1.2k each |
 | `sniff` output | once per repo, per task | ~0.3k tokens instead of ~3–8k of exploring |
 

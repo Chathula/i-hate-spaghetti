@@ -1,6 +1,6 @@
 ---
 name: i-hate-spaghetti
-description: Write and review code that stays structured, quiet, and consistent with the codebase it lands in. Use when writing, refactoring, or reviewing code, adding a feature, or cleaning up a mess — it learns the project's existing patterns first, keeps the diff small, and measures the result instead of praising it.
+description: Write and review code that stays structured, quiet, and consistent with the codebase it lands in. Use when coding — by default on any task that writes, edits, refactors, or reviews code, adds a feature, or cleans up a mess. It learns the project's existing patterns first, keeps the diff small, and measures the result instead of praising it.
 license: MIT
 metadata:
   author: Chathula Sampath
@@ -12,11 +12,13 @@ metadata:
 
 A code-quality contract for coding agents. It adds the one thing vibe-coding minimalism misses: **before** writing, the agent has to learn the codebase's own conventions; **after** writing, it has to measure what it produced.
 
+**On by default for code.** Any task that touches code loads this skill without being asked. Say "stop spaghetti" or "normal mode" to turn it off for the session; it stays out of the way for prose, config-only edits, and questions.
+
 Loaded once per task. Nothing here runs every turn.
 
 ## When to use
 
-- Any task that creates, edits, moves or reviews code — feature, bugfix, refactor, review.
+- Every task that creates, edits, moves or reviews code — feature, bugfix, refactor, review. This is the default, not an opt-in.
 - Not for: prose, config-only edits, questions answered without touching code.
 
 ## The six laws
@@ -84,7 +86,7 @@ Input validation at trust boundaries · error handling that prevents data loss �
 
 ## Modes
 
-- **build** (default) — the rules above.
+- **build** (default — on for every code task) — the rules above.
 - **review** — load `references/review.md`; audits a diff or a repo and reports findings without editing.
 - **off** — "stop spaghetti" / "normal mode".
 
