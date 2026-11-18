@@ -140,6 +140,8 @@ Exit codes: `0` clean, `1` findings, `2` usage error — drop it in CI:
 
 `sniff` prints an aligned contract; `score` groups findings by file. Colors turn on for a terminal and stay off in pipes, CI and where `NO_COLOR` is set; `--color always|never` overrides.
 
+Heuristics are language-agnostic: line and block comments, braces or indentation, C-family/JVM/Go/Rust/Swift/Dart signatures, keyword blocks (Python, Ruby, Elixir, Lua, Julia, Nim, ML, F#, VB), and plain structure — file size, TODOs, long lines — for everything else. Files with an unknown extension are skipped; add one line to `LANGS` in `analysis.py` to include a language.
+
 Python 3.10+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it.
 
 `skills/i-hate-spaghetti/scripts/analysis.py` is the library half (walking, measuring); `spaghetti.py` is the CLI. Import the former if you want the checks inside your own tooling.
@@ -164,6 +166,7 @@ That is the design constraint: **the skill must cost less than the exploration i
 ## What it is not
 
 - Not a linter, formatter, or replacement for either. If the repo has one, the skill defers to it.
+- Not a parser. Language support is a table plus generic comment/indent/brace heuristics, not a grammar per language — flags point at code worth a look.
 - Not an auto-refactorer. It reports; the human decides.
 - Not opinionated about your framework, language, or architecture — it takes its opinions from the repo it is standing in.
 - Not a style police for code you did not touch. It governs the diff, not your weekend.

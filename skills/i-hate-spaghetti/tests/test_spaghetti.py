@@ -125,5 +125,44 @@ class ScoreTest(unittest.TestCase):
             self.assertIn("score:", out.stdout)
 
 
+class LanguageTest(unittest.TestCase):
+    """The heuristics are language-agnostic: no Python-only shapes."""
+
+    def test_long_function_in_brace_languages(self):
+        body = "\n".join(f"    step_{i} = compute_{i}(n);" for i in range(70))
+        samples = {
+            "a.c": f"int compute(int n) {{\n{body}\n    return 0;\n}}\n",
+            "b.kt": f"fun compute(n: Int): Int {{\n{body}\n    return 0\n}}\n",
+            "c.dart": f"int compute(int n) {{\n{body}\n    return 0;\n}}\n",
+            "d.go": f"func compute(n int) int {{\n{body}\n    return 0\n}}\n",
+        }
+        for name, source in samples.items():
+            with self.subTest(lang=name), Workspace() as root:
+                write(root, name, source)
+                self.assertIn("long-func", run("score", ".", cwd=root).stdout)
+
+    def test_long_function_in_keyword_block_languages(self):
+        body = "\n".join(f"    local x{i} = compute_{i}(n)" for i in range(70))
+        with Workspace() as root:
+            write(root, "a.lua", f"local function compute(n)\n{body}\nend\n")
+            self.assertIn("compute", run("score", ".", cwd=root).stdout)
+
+    def test_block_comments_are_counted_as_commented_code(self):
+        with Workspace() as root:
+            write(root, "a.css", "/*\n.colour { color: red; }\n*/\n.a { color: blue; }\n")
+            self.assertIn("commented-code", run("score", ".", cwd=root).stdout)
+
+    def test_sniff_counts_languages_beyond_python(self):
+        with Workspace() as root:
+            for i in range(3):
+                write(root, f"r{i}.rs", "x\n")
+            for i in range(2):
+                write(root, f"k{i}.kt", "x\n")
+            write(root, "a.dart", "x\n")
+            out = run("sniff", ".", cwd=root).stdout
+            for lang in ("rs(3)", "kt(2)", "dart(1)"):
+                self.assertIn(lang, out)
+
+
 if __name__ == "__main__":
     unittest.main()

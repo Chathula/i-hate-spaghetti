@@ -1,6 +1,6 @@
 ---
 name: i-hate-spaghetti
-description: Write and review code that stays structured, quiet, and consistent with the codebase it lands in. Use when coding — by default on any task that writes, edits, refactors, or reviews code, adds a feature, or cleans up a mess. It learns the project's existing patterns first, keeps the diff small, and measures the result instead of praising it.
+description: Write and review code in any language that stays structured, quiet, and consistent with the codebase it lands in. Use when coding — by default on any task that writes, edits, refactors, or reviews code, adds a feature, or cleans up a mess. It learns the project's existing patterns first, keeps the diff small, and measures the result instead of praising it.
 license: MIT
 metadata:
   author: Chathula Sampath
