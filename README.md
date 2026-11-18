@@ -11,19 +11,20 @@ Works with Claude Code, Codex CLI, OpenCode, Pi, omp, and any agent that impleme
 ```text
 $ spaghetti.py sniff .
 i-hate-spaghetti · project contract
-stack:   ts(412) css(31) py(12)
-size:    455 source files, 61,204 lines, max depth 4
-build:   bun
-scripts: dev build test lint typecheck
-lint:    eslint.config.js .prettierrc tsconfig.json
-tests:   tests/ (dir, 88 files)
-layout:  app components lib server scripts tests types
+stack:    ts(412) css(31) py(12)
+size:     455 source files, 61,204 lines, max depth 4
+build:    bun
+scripts:  dev build test lint typecheck
+lint:     eslint.config.js .prettierrc tsconfig.json
+tests:    tests/ (dir, 88 files)
+layout:   app components lib server scripts tests types
+comments: light (6%) · line comments, doc blocks
 biggest:
   lines  file
     912  server/routes/reports.ts
     604  lib/api/client.ts
-naming:  kebab-case (dominant)
-commits: feat(billing): add retry on capture | fix: quote order id | chore: bump deps
+naming:   kebab-case (dominant)
+commits:  feat(billing): add retry on capture | fix: quote order id | chore: bump deps
 ```
 
 That is the whole point: **one command, ~30 lines, instead of ten exploratory file reads.** The agent learns the house style before it writes a line, and it pays for that knowledge in tokens once.
@@ -40,12 +41,15 @@ Linters catch line-level style. Reviewers catch logic. Nobody catches "this file
 
 ## How it works
 
-Four rules, in order:
+Five rules, in order:
 
-1. **Learn the project before writing.** `sniff` reports the stack, the build/test/lint commands, the layout, the dominant naming style, the biggest files (your future split candidates) and the commit-message convention.
+1. **Learn the project before writing.** `sniff` reports the stack, the build/test/lint commands, the layout, the dominant naming style, the biggest files (your future split candidates), the comment register (density and form) and the commit-message convention.
 2. **Read the neighbourhood.** The files the change touches, plus every caller of every function being modified. Missed callers are how a "small change" becomes a regression.
 3. **Write the smallest coherent diff in the project's own pattern.** Not the smallest diff — the smallest *coherent* one. A guard in the shared function beats a guard in each of five callers.
 4. **Measure the result.** `score` flags long files, long functions, deep nesting, duplicated blocks, commented-out code, TODOs and comment noise — per file, with line numbers. Exit code 1 when there is anything to look at, so it drops straight into a pre-commit hook or CI.
+5. **Align the diff.** Re-read only the lines you added against the contract: naming, error style, comment register, test placement. Fixing your own diff is in scope; reformatting untouched code is not.
+
+Learning first is the token-cheap order: rewriting a finished change to match a pattern costs more than matching it while writing. The final align step is a safety net over the diff, not a substitute for step 1 — and it never reformats the repo.
 
 When the codebase's own pattern is the real problem (a 900-line module, swallowed errors, copy-paste everywhere), the agent does the task the existing way and **raises it once**, in one line, at the end. No unrequested refactors. Ever.
 
@@ -119,7 +123,7 @@ OpenCode       skill: i-hate-spaghetti
 Pi / omp       /skill:i-hate-spaghetti
 ```
 
-Turn it off with **"stop spaghetti"** or **"normal mode"** in a message.
+Turn it off with **"stop spaghetti"** or **"normal mode"** in a message. To run it as the last pass over a finished change — align the diff, do not reformat the repo — say **"align this change"** or invoke the `align` mode.
 
 ## The scripts, standalone
 
@@ -157,7 +161,7 @@ Known false positives, by design and by name:
 | Loaded | When | Size |
 |---|---|---|
 | Description only | every turn, in the skill index | ~80 tokens |
-| `SKILL.md` | when a coding task starts | ~1.7k tokens (110 lines) |
+| `SKILL.md` | when a coding task starts | ~1.75k tokens (113 lines) |
 | `references/*.md` | only when the skill points at one | ~0.65–1.2k each |
 | `sniff` output | once per repo, per task | ~0.3k tokens instead of ~3–8k of exploring |
 

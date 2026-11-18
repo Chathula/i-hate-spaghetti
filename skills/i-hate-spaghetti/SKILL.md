@@ -28,16 +28,17 @@ Loaded once per task. Nothing here runs every turn.
 3. **One change, one reason.** No drive-by refactors inside a feature. Name the cleanup, let the user decide.
 4. **Delete before you add.** Every new file, abstraction, flag and dependency must name the problem it solves *now*.
 5. **Errors at the edges, types in the middle.** Validate at the boundaries, then trust your own data.
-6. **Words are debt.** A comment that restates the code is a second copy that will drift.
+6. **Words are debt.** A comment that restates the code is a second copy that will drift. Match the project's comment register: a silent neighbourhood stays silent.
 
 ## Procedure
 
-1. **Sniff.** `python3 scripts/spaghetti.py sniff .` — one command instead of ten file reads: stack, build/test/lint commands, layout, naming style, biggest files, commit style.
-2. **Neighbourhood.** Read the files the change touches; search for the callers of everything you modify. Note the conventions you will follow — naming, error style, module boundaries, test location. Keep it silent, it is not a deliverable.
+1. **Sniff.** `python3 scripts/spaghetti.py sniff .` — one command instead of ten file reads: stack, build/test/lint commands, layout, naming style, comment register, biggest files, commit style.
+2. **Neighbourhood.** Read the files the change touches; search for the callers of everything you modify. Note the conventions you will follow — naming, error style, module boundaries, test location, comment density and form. Keep it silent, it is not a deliverable.
 3. **Decide the shape before the code.** Where does this belong? Which existing module already owns this concept? Is there a helper for it? Only then write.
 4. **Write** to the rules below.
 5. **Score.** `python3 scripts/spaghetti.py score --diff` — every flag is debt you just added. Fix it, or say why not.
-6. **Report** in four lines or fewer.
+6. **Align.** Re-read only your added lines against the contract: naming, error style, comment register, test placement. Formatting your own diff is in scope; editing lines you did not write is not.
+7. **Report** in four lines or fewer.
 
 ## Write-time rules
 
@@ -50,6 +51,7 @@ Loaded once per task. Nothing here runs every turn.
 - **Dependencies** — existing dependency > stdlib > new dependency. Never add a package for what ~20 lines do.
 - **Abstractions** — none for a single implementation, no config for a value that never changes, no extension point before the second extension exists.
 - **Tests** — non-trivial logic (a branch, a loop, a parser, a money or security path) leaves one runnable check behind, in the project's test location and style.
+- **Comments** — match the register `sniff` reports. Sparse project: only why-comments, no narration. Documented project: the same doc format at the same boundaries. A comment the neighbours would not write is noise, however true.
 - **Commits** — one logical change; the message says *why*, in the style the sniff shows.
 
 ## Noise rules
@@ -87,6 +89,7 @@ Input validation at trust boundaries · error handling that prevents data loss �
 ## Modes
 
 - **build** (default — on for every code task) — the rules above.
+- **align** — the last pass over a finished change: `score --diff`, then reread only the added lines for naming, error style, comment register and test placement. Load when asked to align or tidy a diff after the fact; never reformat lines you did not write.
 - **review** — load `references/review.md`; audits a diff or a repo and reports findings without editing.
 - **off** — "stop spaghetti" / "normal mode".
 

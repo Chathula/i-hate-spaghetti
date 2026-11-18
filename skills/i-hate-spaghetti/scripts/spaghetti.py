@@ -17,7 +17,7 @@ from pathlib import Path
 from analysis import (
     git, is_source, lint_configs, naming_style, walk, read_lines,
     scan_file, duplicate_findings, detect_package_managers, package_scripts,
-    test_locations, LANGS, SKIP_DIRS, rel,
+    test_locations, comment_style, LANGS, SKIP_DIRS, rel,
 )
 
 CODES = {
@@ -105,6 +105,9 @@ def cmd_sniff(root: Path, style: Theme) -> int:
     )[:12]
     if top_dirs:
         rows.append(("layout", " ".join(top_dirs)))
+    register = comment_style(files)
+    if register:
+        rows.append(("comments", register))
 
     print(style("i-hate-spaghetti", "bold") + style(" · project contract", "dim"))
     print_kv(rows, style)

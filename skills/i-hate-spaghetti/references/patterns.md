@@ -17,6 +17,7 @@ What to record (silently) from those three reads:
 - **Naming** — file casing, function verb style (`getX` vs `fetchX` vs `findX`), boolean prefixes (`is`/`has`/`should`), the project's word for each domain concept.
 - **Errors** — returned, thrown, `Result` types, error codes, custom error classes. Where do they get caught?
 - **Boundaries** — where does validation happen? Where does I/O happen? Which layer talks to the database?
+- **Comments** — density, placement and form (line, block, doc blocks). A silent neighbourhood means your addition stays silent; a documented one gets the same doc format at the same boundaries.
 - **Tests** — directory, file naming, fixture style, mocks vs fakes.
 - **Dependencies** — how new modules are pulled in: direct import, container, registry, barrel file.
 

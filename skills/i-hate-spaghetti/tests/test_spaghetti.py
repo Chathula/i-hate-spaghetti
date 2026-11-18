@@ -52,8 +52,17 @@ class SniffTest(unittest.TestCase):
             write(root, "a.js", "module.exports = 1;\n")
             out = run("sniff", ".", cwd=root)
             self.assertEqual(out.returncode, 0)
-            self.assertIn("scripts: build", out.stdout)
+            self.assertIn("scripts:", out.stdout)
+            self.assertIn("build", out.stdout)
             self.assertNotIn("commits:", out.stdout)
+
+    def test_reports_comment_register(self):
+        with Workspace() as root:
+            write(root, "a.py", "\n".join(f"x{i} = {i}" for i in range(20)) + "\n")
+            write(root, "b.py", "# why\n# why\n" + "\n".join(f"y{i} = {i}" for i in range(2)) + "\n")
+            out = run("sniff", ".", cwd=root).stdout
+            self.assertIn("comments: light", out)
+            self.assertIn("line comments", out)
 
     def test_colors_only_when_asked(self):
         with Workspace() as root:

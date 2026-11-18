@@ -206,6 +206,49 @@ def prose_lines(path: Path, lines):
     return skip
 
 
+def comment_line_count(path: Path, lines) -> int:
+    """Lines that are comments or prose — line, block and doc strings alike."""
+    token = comment_token(path)
+    pair = block_comment(path)
+    prose = prose_lines(path, lines)
+    return sum(
+        1 for i, line in enumerate(lines)
+        if line.strip()
+        and (i in prose or is_comment(line, token)
+             or (pair and line.strip().startswith(pair[0])))
+    )
+
+
+def comment_style(files):
+    """Comment register for sniff: density and the form the project writes."""
+    total = comments = 0
+    forms = Counter()
+    for path in files:
+        lines = read_lines(path)
+        if not lines:
+            continue
+        total += sum(1 for line in lines if line.strip())
+        comments += comment_line_count(path, lines)
+        token = comment_token(path)
+        pair = block_comment(path)
+        for line in lines:
+            s = line.lstrip()
+            if s.startswith("/**") or s.startswith("///"):
+                forms["doc blocks"] += 1
+            elif path.suffix.lower() == ".py" and s.startswith(('"""', "'''")):
+                forms["docstrings"] += 1
+            elif token and s.startswith(token):
+                forms["line comments"] += 1
+            elif pair and s.startswith(pair[0]):
+                forms["block comments"] += 1
+    if not total:
+        return ""
+    pct = round(100 * comments / total)
+    density = "sparse" if pct < 5 else "light" if pct < 12 else "moderate" if pct < 25 else "heavy"
+    styles = ", ".join(name for name, _ in forms.most_common(2)) or "none"
+    return f"{density} ({pct}%) · {styles}"
+
+
 def indent_unit(lines, token: str):
     for line in lines:
         if not line.strip() or is_comment(line, token):
