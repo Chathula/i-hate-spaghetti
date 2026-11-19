@@ -24,7 +24,7 @@ biggest:
     912  server/routes/reports.ts
     604  lib/api/client.ts
 naming:   kebab-case (dominant)
-commits:  feat(billing): add retry on capture | fix: quote order id | chore: bump deps
+commits:  feat(2) fix(1)
 ```
 
 That is the whole point: **one command, ~30 lines, instead of ten exploratory file reads.** The agent learns the house style before it writes a line, and it pays for that knowledge in tokens once.
@@ -146,7 +146,7 @@ Exit codes: `0` clean, `1` findings, `2` usage error — drop it in CI:
 
 Heuristics are language-agnostic: line and block comments, braces or indentation, C-family/JVM/Go/Rust/Swift/Dart signatures, keyword blocks (Python, Ruby, Elixir, Lua, Julia, Nim, ML, F#, VB), and plain structure — file size, TODOs, long lines — for everything else. Files with an unknown extension are skipped; add one line to `LANGS` in `analysis.py` to include a language.
 
-Python 3.10+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it.
+Python 3.10+, standard library only, no dependencies, no network. Findings are heuristics: they point at code worth a second look, they do not judge it. The security policy and Snyk scan commands live in [SECURITY.md](SECURITY.md).
 
 `skills/i-hate-spaghetti/scripts/analysis.py` is the library half (walking, measuring); `spaghetti.py` is the CLI. Import the former if you want the checks inside your own tooling.
 
