@@ -46,6 +46,7 @@ Loaded once per task. Nothing here runs every turn.
 - **Functions** — one level of abstraction, ≤4 parameters (more means pass a struct), guard clauses instead of nesting.
 - **Nesting** — max 3 levels. Deeper means extract or return early.
 - **Modules** — one reason to change. Split by responsibility, never into one-function files.
+- **Reuse** — the project's existing helper, component or type is the default; write a new one only when none exists and a second caller is already in sight. KISS and YAGNI are the tie-breakers; DRY starts at the third copy, not the second.
 - **Duplication** — rule of three: the third occurrence gets extracted; the second is usually a coincidence.
 - **State** — pure functions at the core, side effects at the edges. Anything that silently mutates is named for it or split.
 - **Dependencies** — existing dependency > stdlib > new dependency. Never add a package for what ~20 lines do.

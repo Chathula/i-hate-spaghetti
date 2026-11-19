@@ -45,7 +45,7 @@ Five rules, in order:
 
 1. **Learn the project before writing.** `sniff` reports the stack, the build/test/lint commands, the layout, the dominant naming style, the biggest files (your future split candidates), the comment register (density and form) and the commit-message convention.
 2. **Read the neighbourhood.** The files the change touches, plus every caller of every function being modified. Missed callers are how a "small change" becomes a regression.
-3. **Write the smallest coherent diff in the project's own pattern.** Not the smallest diff — the smallest *coherent* one. A guard in the shared function beats a guard in each of five callers.
+3. **Write the smallest coherent diff in the project's own pattern.** Not the smallest diff — the smallest *coherent* one. Reuse the existing helper; a guard in the shared function beats a guard in each of five callers. Extract on the third repetition, not the second — KISS, DRY and YAGNI are applied with judgment, not as a checklist.
 4. **Measure the result.** `score` flags long files, long functions, deep nesting, duplicated blocks, commented-out code, TODOs and comment noise — per file, with line numbers. Exit code 1 when there is anything to look at, so it drops straight into a pre-commit hook or CI.
 5. **Align the diff.** Re-read only the lines you added against the contract: naming, error style, comment register, test placement. Fixing your own diff is in scope; reformatting untouched code is not.
 
@@ -161,7 +161,7 @@ Known false positives, by design and by name:
 | Loaded | When | Size |
 |---|---|---|
 | Description only | every turn, in the skill index | ~80 tokens |
-| `SKILL.md` | when a coding task starts | ~1.75k tokens (113 lines) |
+| `SKILL.md` | when a coding task starts | ~1.75k tokens (114 lines) |
 | `references/*.md` | only when the skill points at one | ~0.65–1.2k each |
 | `sniff` output | once per repo, per task | ~0.3k tokens instead of ~3–8k of exploring |
 

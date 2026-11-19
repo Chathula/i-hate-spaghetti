@@ -206,17 +206,35 @@ def prose_lines(path: Path, lines):
     return skip
 
 
-def comment_line_count(path: Path, lines) -> int:
-    """Lines that are comments or prose — line, block and doc strings alike."""
+def comment_bodies(path: Path, lines):
+    """(line_index, text) for every line that is entirely a comment, line or block."""
     token = comment_token(path)
     pair = block_comment(path)
-    prose = prose_lines(path, lines)
-    return sum(
-        1 for i, line in enumerate(lines)
-        if line.strip()
-        and (i in prose or is_comment(line, token)
-             or (pair and line.strip().startswith(pair[0])))
-    )
+    inside = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if not s:
+            continue
+        if inside:
+            yield i, s.split(pair[1], 1)[0]
+            inside = pair[1] not in s
+            continue
+        if pair and pair[0] in s:
+            head, rest = s.split(pair[0], 1)
+            if not head.strip():
+                yield i, rest.split(pair[1], 1)[0]
+            inside = pair[1] not in rest
+            continue
+        if token and s.startswith(token):
+            yield i, s[len(token):]
+
+
+def comment_line_count(path: Path, lines, docstrings=True) -> int:
+    """Comment lines, block comments included; Python docstrings on request."""
+    count = sum(1 for _ in comment_bodies(path, lines))
+    if docstrings and LANGS.get(path.suffix.lower()) == "py":
+        count += len(prose_lines(path, lines))
+    return count
 
 
 def comment_style(files):
@@ -242,7 +260,7 @@ def comment_style(files):
             elif pair and s.startswith(pair[0]):
                 forms["block comments"] += 1
     if not total:
-        return ""
+        return "sparse (0%) · none"
     pct = round(100 * comments / total)
     density = "sparse" if pct < 5 else "light" if pct < 12 else "moderate" if pct < 25 else "heavy"
     styles = ", ".join(name for name, _ in forms.most_common(2)) or "none"
@@ -354,28 +372,10 @@ def _brace_function_lengths(lines, token):
 
 def commented_code(path: Path, lines) -> int:
     """Comment lines that look like code someone switched off — line or block."""
-    token = comment_token(path)
-    pair = block_comment(path)
-    n, inside = 0, False
-    for line in lines:
-        s = line.strip()
-        if inside:
-            body = s.split(pair[1], 1)[0]
-            n += bool(CODE_ISH.search(body))
-            inside = pair[1] not in s
-            continue
-        if pair and pair[0] in s:
-            head, rest = s.split(pair[0], 1)
-            body = rest.split(pair[1], 1)[0]
-            if not head.strip() and CODE_ISH.search(body):
-                n += 1
-            inside = pair[1] not in rest
-            continue
-        if token and s.startswith(token):
-            body = s[len(token):].strip()
-            if len(body) > 3 and CODE_ISH.search(body):
-                n += 1
-    return n
+    return sum(
+        1 for _, body in comment_bodies(path, lines)
+        if len(body.strip()) > 3 and CODE_ISH.search(body)
+    )
 
 
 def dup_windows(path: Path, lines, skip=()):
@@ -399,7 +399,6 @@ def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
     lines = read_lines(path)
     if not lines:
         return []
-    token = comment_token(path)
     skip = prose_lines(path, lines)
     total = len(lines)
     findings = []
@@ -431,7 +430,7 @@ def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
         findings.append((1, "long-lines", f"{long_lines} lines >120"))
 
     nonblank = sum(1 for line in lines if line.strip())
-    comments = sum(1 for line in lines if is_comment(line, token)) or (len(skip) if not token else 0)
+    comments = comment_line_count(path, lines, docstrings=False)
     if total >= 50 and nonblank and comments / nonblank > 0.40:
         findings.append((1, "noise-ratio", f"{round(100 * comments / nonblank)}% comments"))
 

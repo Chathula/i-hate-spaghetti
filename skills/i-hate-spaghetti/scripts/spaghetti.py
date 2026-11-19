@@ -105,9 +105,7 @@ def cmd_sniff(root: Path, style: Theme) -> int:
     )[:12]
     if top_dirs:
         rows.append(("layout", " ".join(top_dirs)))
-    register = comment_style(files)
-    if register:
-        rows.append(("comments", register))
+    rows.append(("comments", comment_style(files)))
 
     print(style("i-hate-spaghetti", "bold") + style(" · project contract", "dim"))
     print_kv(rows, style)
