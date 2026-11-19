@@ -19,21 +19,68 @@ SKIP_DIRS = {
 }
 LANGS = {
     ".py": "py", ".js": "js", ".mjs": "js", ".cjs": "js", ".ts": "ts", ".tsx": "tsx",
-    ".jsx": "jsx", ".go": "go", ".rs": "rs", ".java": "java", ".kt": "kt", ".rb": "rb",
-    ".php": "php", ".cs": "cs", ".c": "c", ".h": "c", ".cpp": "cpp", ".cc": "cpp",
-    ".hpp": "cpp", ".swift": "swift", ".dart": "dart", ".ex": "ex", ".exs": "ex",
-    ".sh": "sh", ".bash": "sh", ".sql": "sql", ".vue": "vue", ".svelte": "svelte",
-    ".html": "html", ".css": "css", ".scss": "css", ".lua": "lua", ".zig": "zig",
+    ".jsx": "jsx", ".go": "go", ".rs": "rs", ".java": "java", ".kt": "kt", ".kts": "kt",
+    ".rb": "rb", ".php": "php", ".cs": "cs", ".c": "c", ".h": "c", ".cpp": "cpp",
+    ".cc": "cpp", ".hpp": "cpp", ".swift": "swift", ".dart": "dart", ".ex": "ex",
+    ".exs": "ex", ".sh": "sh", ".bash": "sh", ".zsh": "sh", ".ps1": "ps1", ".sql": "sql",
+    ".vue": "vue", ".svelte": "svelte", ".html": "html", ".css": "css", ".scss": "scss",
+    ".sass": "scss", ".less": "scss", ".lua": "lua", ".zig": "zig", ".scala": "scala",
+    ".clj": "clj", ".cljs": "clj", ".hs": "hs", ".ml": "ml", ".mli": "ml", ".fs": "fs",
+    ".fsx": "fs", ".jl": "jl", ".r": "r", ".pl": "pl", ".pm": "pl", ".groovy": "groovy",
+    ".sol": "sol", ".tf": "tf", ".hcl": "tf", ".nim": "nim", ".v": "v", ".sv": "v",
+    ".asm": "asm", ".s": "asm", ".proto": "proto", ".graphql": "graphql", ".gql": "graphql",
+    ".vb": "vb", ".bas": "vb", ".d": "d", ".cr": "cr", ".raku": "pl",
 }
-COMMENT = {"py": "#", "sh": "#", "rb": "#", "ex": "#", "lua": "--", "sql": "--"}
+LINE_COMMENT = {
+    "py": "#", "sh": "#", "rb": "#", "ex": "#", "pl": "#", "r": "#", "jl": "#",
+    "nim": "#", "ps1": "#", "tf": "#", "clj": ";", "vb": "'",
+    "lua": "--", "sql": "--", "hs": "--",
+}
+BLOCK_COMMENT = {
+    "c": ("/*", "*/"), "cpp": ("/*", "*/"), "cs": ("/*", "*/"), "java": ("/*", "*/"),
+    "kt": ("/*", "*/"), "scala": ("/*", "*/"), "swift": ("/*", "*/"), "dart": ("/*", "*/"),
+    "js": ("/*", "*/"), "jsx": ("/*", "*/"), "ts": ("/*", "*/"), "tsx": ("/*", "*/"),
+    "go": ("/*", "*/"), "rs": ("/*", "*/"), "php": ("/*", "*/"), "css": ("/*", "*/"),
+    "scss": ("/*", "*/"), "sol": ("/*", "*/"), "groovy": ("/*", "*/"), "d": ("/*", "*/"),
+    "cr": ("/*", "*/"), "vue": ("/*", "*/"), "svelte": ("/*", "*/"), "v": ("/*", "*/"),
+    "ml": ("(*", "*)"), "fs": ("(*", "*)"), "tf": ("/*", "*/"), "ps1": ("<#", "#>"),
+    "lua": ("--[[", "]]"), "jl": ("#=", "=#"), "nim": ("#[", "]#"),
+    "html": ("<!--", "-->"),
+}
 COMMENT_DEFAULT = "//"
-INDENT_LANGS = {"py", "rb", "ex"}
+NO_LINE_COMMENT = {"css", "html"}
+# Indentation-delimited blocks: Python/Ruby/Elixir, plus keyword-end languages whose
+# bodies are still conventionally indented (Lua, Julia, Nim, Haskell, ML, F#, VB).
+INDENT_LANGS = {"py", "rb", "ex", "lua", "jl", "nim", "hs", "ml", "fs", "vb"}
+# Languages with no functions to measure: rules, markup, queries.
+FUNC_LESS = {"css", "scss", "html", "sql", "asm", "proto", "graphql", "tf"}
 MARKUP = {".tsx", ".jsx", ".vue", ".svelte", ".html"}
 DUP_WINDOW = 8
-BRACE_SIG = re.compile(
-    r"\b(?:function|func|fn|def|sub|proc|public|private|protected|internal|static|async|override)\b[^\n;]*\("
-    r"|^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?[A-Za-z_$][\w$]*\s*\([^;\n]*\)\s*\{",
-    re.M,
+CONTROL_WORDS = {
+    "if", "for", "while", "switch", "catch", "with", "using", "lock", "foreach",
+    "match", "do", "else", "try", "finally", "when", "return", "new", "throw",
+    "await", "yield", "case", "assert", "sizeof", "typeof", "delete",
+}
+DECL_WORDS = {
+    "function", "func", "fn", "fun", "def", "defp", "sub", "proc", "method",
+    "constructor", "class", "struct", "interface", "enum", "trait", "impl",
+    "namespace", "module", "object", "template",
+}
+NOT_NAMES = CONTROL_WORDS | DECL_WORDS
+FUNC_KEYWORD = re.compile(
+    r"\b(?:function|func|fn|fun|defp?|sub|proc|method|constructor)\s*\*?\s+"
+    r"([A-Za-z_$][\w$]*)",
+    re.I,
+)
+IDENT_PARENS = re.compile(r"([A-Za-z_$][\w$]*)\s*\(")
+ARROW_FUNC = re.compile(
+    r"\b([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>"
+)
+INDENT_DEF = re.compile(
+    r"^(\s*)(?:(?:public|private|protected|internal|static|shared|local|export|async)\s+)*"
+    r"(?:defp?|function|fun|func|fn|proc|method|sub)\s+"
+    r"(?:self\.)?((?:[\w$]+[.:])?[\w$]+)",
+    re.I,
 )
 TODO_RE = re.compile(r"\b(TODO|FIXME|XXX|HACK)\b", re.I)
 CODE_ISH = re.compile(
@@ -92,22 +139,29 @@ def git(args, root: Path) -> str:
 # ---------------------------------------------------------- line-level helpers
 
 def comment_token(path: Path) -> str:
-    return COMMENT.get(LANGS.get(path.suffix.lower(), ""), COMMENT_DEFAULT)
+    lang = LANGS.get(path.suffix.lower(), "")
+    if lang in NO_LINE_COMMENT:
+        return ""
+    return LINE_COMMENT.get(lang, COMMENT_DEFAULT)
+
+
+def block_comment(path: Path):
+    return BLOCK_COMMENT.get(LANGS.get(path.suffix.lower(), ""))
 
 
 def is_comment(line: str, token: str) -> bool:
-    return line.lstrip().startswith(token)
+    return bool(token) and line.lstrip().startswith(token)
 
 
 def strip_inline(line: str, token: str) -> str:
+    if not token:
+        return line
     idx = line.find(token)
     return line if idx < 0 else line[:idx]
 
 
-def docstring_lines(path: Path, lines):
-    """Indices of lines inside Python triple-quoted strings — prose, not structure."""
-    if path.suffix.lower() != ".py":
-        return set()
+def _python_prose(lines):
+    """Indices inside Python triple-quoted strings — prose, not structure."""
     inside, skip = None, set()
     for i, line in enumerate(lines):
         s = line.strip()
@@ -124,6 +178,93 @@ def docstring_lines(path: Path, lines):
                 inside = q
             break
     return skip
+
+
+def _block_prose(lines, opening, closing):
+    """Indices inside a multi-line block comment, for any language that has one."""
+    inside, skip = False, set()
+    for i, line in enumerate(lines):
+        if inside:
+            skip.add(i)
+            if closing in line:
+                inside = False
+            continue
+        start = line.find(opening)
+        if start >= 0 and closing not in line[start + len(opening):]:
+            inside = True
+            skip.add(i)
+    return skip
+
+
+def prose_lines(path: Path, lines):
+    """Lines that are prose (docstrings, block comments), not structure."""
+    lang = LANGS.get(path.suffix.lower(), "")
+    skip = _python_prose(lines) if lang == "py" else set()
+    pair = BLOCK_COMMENT.get(lang)
+    if pair:
+        skip |= _block_prose(lines, *pair)
+    return skip
+
+
+def comment_bodies(path: Path, lines):
+    """(line_index, text) for every line that is entirely a comment, line or block."""
+    token = comment_token(path)
+    pair = block_comment(path)
+    inside = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if not s:
+            continue
+        if inside:
+            yield i, s.split(pair[1], 1)[0]
+            inside = pair[1] not in s
+            continue
+        if pair and pair[0] in s:
+            head, rest = s.split(pair[0], 1)
+            if not head.strip():
+                yield i, rest.split(pair[1], 1)[0]
+            inside = pair[1] not in rest
+            continue
+        if token and s.startswith(token):
+            yield i, s[len(token):]
+
+
+def comment_line_count(path: Path, lines, docstrings=True) -> int:
+    """Comment lines, block comments included; Python docstrings on request."""
+    count = sum(1 for _ in comment_bodies(path, lines))
+    if docstrings and LANGS.get(path.suffix.lower()) == "py":
+        count += len(prose_lines(path, lines))
+    return count
+
+
+def comment_style(files):
+    """Comment register for sniff: density and the form the project writes."""
+    total = comments = 0
+    forms = Counter()
+    for path in files:
+        lines = read_lines(path)
+        if not lines:
+            continue
+        total += sum(1 for line in lines if line.strip())
+        comments += comment_line_count(path, lines)
+        token = comment_token(path)
+        pair = block_comment(path)
+        for line in lines:
+            s = line.lstrip()
+            if s.startswith("/**") or s.startswith("///"):
+                forms["doc blocks"] += 1
+            elif path.suffix.lower() == ".py" and s.startswith(('"""', "'''")):
+                forms["docstrings"] += 1
+            elif token and s.startswith(token):
+                forms["line comments"] += 1
+            elif pair and s.startswith(pair[0]):
+                forms["block comments"] += 1
+    if not total:
+        return "sparse (0%) · none"
+    pct = round(100 * comments / total)
+    density = "sparse" if pct < 5 else "light" if pct < 12 else "moderate" if pct < 25 else "heavy"
+    styles = ", ".join(name for name, _ in forms.most_common(2)) or "none"
+    return f"{density} ({pct}%) · {styles}"
 
 
 def indent_unit(lines, token: str):
@@ -166,14 +307,17 @@ def max_nesting(path: Path, lines, skip=()):
 def function_lengths(path: Path, lines):
     """[(name, start_line, length)] — longest three, heuristic."""
     lang = LANGS.get(path.suffix.lower(), "")
-    token = comment_token(path)
-    if lang not in INDENT_LANGS:
-        return _brace_function_lengths(lines, token)
+    if lang in FUNC_LESS:
+        return []
+    if lang in INDENT_LANGS:
+        return _indented_function_lengths(lines)
+    return _brace_function_lengths(lines, comment_token(path))
 
-    def_re = re.compile(r"^(\s*)(?:async\s+)?def\s+(\w+)")
+
+def _indented_function_lengths(lines):
     out = []
     for i, line in enumerate(lines):
-        match = def_re.match(line)
+        match = INDENT_DEF.match(line)
         if match:
             base = len(match.group(1))
             out.append((match.group(2), i + 1, _indented_block_end(lines, i, base) - i))
@@ -189,36 +333,49 @@ def _indented_block_end(lines, start, base):
     return len(lines)
 
 
+def signature_name(code: str) -> str:
+    """Name of the function/closure a brace-language line opens, or '' for control flow."""
+    if "{" not in code:
+        return ""
+    head = code.split("{", 1)[0]
+    words = re.findall(r"[A-Za-z_$][\w$]*", head)
+    if words and words[0].lower() in CONTROL_WORDS:
+        return ""
+    match = FUNC_KEYWORD.search(head) or ARROW_FUNC.search(head)
+    if match:
+        return match.group(1)
+    if "=" in head:
+        return ""
+    calls = [m for m in IDENT_PARENS.finditer(head) if m.group(1).lower() not in NOT_NAMES]
+    return calls[-1].group(1) if calls else ""
+
+
 def _brace_function_lengths(lines, token):
     depth, start, name = 0, None, ""
     out = []
     for i, line in enumerate(lines):
         code = strip_inline(line, token)
-        if start is None and BRACE_SIG.search(line) and "{" in code:
-            match = re.search(r"([A-Za-z_$][\w$]*)\s*\(", line)
-            name, start, depth = (match.group(1) if match else "anonymous"), i, 0
         if start is None:
-            continue
+            name = signature_name(code)
+            if not name:
+                continue
+            start = i
         depth += code.count("{") - code.count("}")
-        if depth <= 0 and i > start:
-            out.append((name, start + 1, i - start))
+        if depth <= 0:
+            if i > start:
+                out.append((name, start + 1, i - start))
             start = None
     if start is not None:
         out.append((name or "anonymous", start + 1, len(lines) - start))
     return sorted(out, key=lambda f: -f[2])[:3]
 
 
-def commented_code(lines, token) -> int:
-    """Comment lines that look like code someone switched off."""
-    n = 0
-    for line in lines:
-        s = line.lstrip()
-        if not s.startswith(token):
-            continue
-        body = s[len(token):].strip()
-        if len(body) > 3 and CODE_ISH.search(body):
-            n += 1
-    return n
+def commented_code(path: Path, lines) -> int:
+    """Comment lines that look like code someone switched off — line or block."""
+    return sum(
+        1 for _, body in comment_bodies(path, lines)
+        if len(body.strip()) > 3 and CODE_ISH.search(body)
+    )
 
 
 def dup_windows(path: Path, lines, skip=()):
@@ -229,7 +386,7 @@ def dup_windows(path: Path, lines, skip=()):
         if i - 1 in skip:
             continue
         s = line.strip()
-        if not s or s.startswith(token) or s.startswith("#") or s.startswith("//"):
+        if not s or (token and s.startswith(token)) or s.startswith("#") or s.startswith("//"):
             continue
         norm.append((i, re.sub(r"\s+", " ", s)))
     for i in range(len(norm) - DUP_WINDOW + 1):
@@ -242,8 +399,7 @@ def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
     lines = read_lines(path)
     if not lines:
         return []
-    token = comment_token(path)
-    skip = docstring_lines(path, lines)
+    skip = prose_lines(path, lines)
     total = len(lines)
     findings = []
 
@@ -261,7 +417,7 @@ def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
     if depth > limit:
         findings.append((at, "deep-nest", f"depth {depth} (max {limit})"))
 
-    dead = commented_code(lines, token)
+    dead = commented_code(path, lines)
     if dead:
         findings.append((1, "commented-code", f"{dead} lines"))
 
@@ -274,7 +430,7 @@ def scan_file(path: Path, max_lines=400, max_func=60, max_nest=4):
         findings.append((1, "long-lines", f"{long_lines} lines >120"))
 
     nonblank = sum(1 for line in lines if line.strip())
-    comments = sum(1 for line in lines if is_comment(line, token))
+    comments = comment_line_count(path, lines, docstrings=False)
     if total >= 50 and nonblank and comments / nonblank > 0.40:
         findings.append((1, "noise-ratio", f"{round(100 * comments / nonblank)}% comments"))
 
@@ -286,7 +442,7 @@ def duplicate_findings(targets, root: Path, limit=5):
     windows = defaultdict(list)
     for p in targets:
         lines = read_lines(p)
-        for h, line in dup_windows(p, lines, docstring_lines(p, lines)):
+        for h, line in dup_windows(p, lines, prose_lines(p, lines)):
             windows[h].append((p, line))
 
     found, seen = [], set()
