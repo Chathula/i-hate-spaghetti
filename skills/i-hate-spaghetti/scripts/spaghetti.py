@@ -17,12 +17,12 @@ from pathlib import Path
 from analysis import (
     git, is_source, lint_configs, naming_style, walk, read_lines,
     scan_file, duplicate_findings, detect_package_managers, package_scripts,
-    test_locations, comment_style, LANGS, SKIP_DIRS, rel,
+    test_locations, comment_style, commit_style, clean, LANGS, SKIP_DIRS, rel,
 )
 
 CODES = {
     "bold": "1", "dim": "2", "red": "31", "green": "32",
-    "yellow": "33", "cyan": "36",
+    "yellow": "33", "cyan": "36", "orange": "38;5;208",
 }
 NOISE_CHECKS = {"commented-code", "todos", "long-lines", "noise-ratio"}
 
@@ -51,13 +51,13 @@ def print_kv(rows, style: Theme) -> None:
     """Aligned `key: value` block — the sniff contract."""
     width = max(len(label) for label, _ in rows) + 1
     for label, value in rows:
-        print(style(f"{label}:".ljust(width), "dim") + " " + value)
+        print(style(f"{label}:".ljust(width), "orange") + " " + value)
 
 
 def print_biggest(sizes, root: Path, style: Theme) -> None:
     top = sorted(sizes, reverse=True)[:5]
     width = max([len("lines")] + [len(str(count)) for count, _ in top])
-    print(style("biggest:", "dim"))
+    print(style("biggest:", "orange"))
     print(style(f"  {'lines'.rjust(width)}  file", "dim"))
     for count, path in top:
         print(f"  {style(str(count).rjust(width), 'yellow')}  {rel(path, root)}")
@@ -91,7 +91,7 @@ def cmd_sniff(root: Path, style: Theme) -> int:
         rows.append(("build", " ".join(managers)))
     scripts = package_scripts(root)
     if scripts:
-        rows.append(("scripts", " ".join(scripts)))
+        rows.append(("scripts", " ".join(clean(name, 40) for name in scripts)))
     lints = lint_configs(root)
     if lints:
         rows.append(("lint", " ".join(lints)))
@@ -100,7 +100,7 @@ def cmd_sniff(root: Path, style: Theme) -> int:
         rows.append(("tests", ", ".join(tests)))
 
     top_dirs = sorted(
-        d.name for d in root.iterdir()
+        clean(d.name, 40) for d in root.iterdir()
         if d.is_dir() and not d.name.startswith(".") and d.name not in SKIP_DIRS
     )[:12]
     if top_dirs:
@@ -116,9 +116,9 @@ def cmd_sniff(root: Path, style: Theme) -> int:
         naming_style([p.name for _, p in sorted(sizes, reverse=True)[:40]]) + " (dominant)",
     )], style)
 
-    log = git(["log", "-3", "--format=%s"], root)
-    if log:
-        print_kv([("commits", " | ".join(s[:60] for s in log.splitlines()))], style)
+    subjects = git(["log", "-8", "--format=%s"], root).splitlines()
+    if subjects:
+        print_kv([("commits", commit_style(subjects))], style)
     return 0
 
 
@@ -163,7 +163,7 @@ def cmd_score(args, style: Theme) -> int:
 
     pct = 100 * len(groups) / len(targets)
     tone = "green" if not total else "yellow"
-    summary = (f"score: {style(str(total), tone)} flags in "
+    summary = (f"{style('score:', 'orange')} {style(str(total), tone)} flags in "
                f"{len(groups)} of {len(targets)} files ({pct:.1f}%)")
     print(summary)
     return 1 if total else 0

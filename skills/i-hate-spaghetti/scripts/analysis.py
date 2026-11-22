@@ -119,11 +119,19 @@ def read_lines(path: Path):
     return tuple(text.splitlines())
 
 
+CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")
+
+
+def clean(text, limit=200) -> str:
+    """Untrusted display text: no terminal escapes, no unbounded line."""
+    return CONTROL_CHARS.sub("?", str(text))[:limit]
+
+
 def rel(path: Path, root: Path) -> str:
     try:
-        return str(path.resolve().relative_to(root.resolve()))
+        return clean(path.resolve().relative_to(root.resolve()))
     except ValueError:
-        return str(path)
+        return clean(path)
 
 
 def git(args, root: Path) -> str:
@@ -521,6 +529,14 @@ def test_locations(root: Path):
     if by_name:
         found.append(f"{by_name} test files by name")
     return found[:4]
+
+
+def commit_style(subjects):
+    """Commit register from prefixes only; never echo the messages."""
+    kinds = Counter(s.split(":", 1)[0] for s in subjects if ":" in s)
+    if not kinds:
+        return f"{len(subjects)} recent, no prefix convention"
+    return " ".join(f"{clean(name, 24)}({count})" for name, count in kinds.most_common(3))
 
 
 def naming_style(names):
